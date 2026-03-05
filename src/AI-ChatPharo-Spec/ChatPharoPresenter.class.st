@@ -44,11 +44,12 @@ ChatPharoPresenter >> defaultLayout [
 
 	^ SpBoxLayout newTopToBottom
 		  add: toolbar expand: false;
-		  add: notebook;
+		  add: notebook expand: true;
 		  add: (SpBoxLayout newHorizontal
-		            hAlignCenter;
-		            add: disclaimerLabel expand: false;
-		            yourself) expand: false;
+				   hAlignCenter;
+				   add: disclaimerLabel expand: false;
+				   yourself)
+		  expand: false;
 		  yourself
 ]
 
