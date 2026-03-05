@@ -202,7 +202,8 @@ ChatPharoLMStudioSettingsPresenter >> refreshModels [
     (availableModels isEmpty)
         ifFalse: [
             (currentModel isNil or: [ (availableModels includes: currentModel) not ])
-                ifTrue: [ modelsDrop selectFirst ].
+                ifTrue: [ modelsDrop selectFirst ]
+ ifFalse: [ modelsDrop selectItem: currentModel ].
         ].
 ]
 

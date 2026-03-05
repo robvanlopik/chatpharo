@@ -279,6 +279,7 @@ ChatPharoOllamaSettingsPresenter >> refreshButton: anObject [
 { #category : 'initialization' }
 ChatPharoOllamaSettingsPresenter >> refreshModels [ 
 
+
     | availableModels currentModel |
     availableModels := model class modelNames.
     currentModel := model model.
@@ -290,7 +291,8 @@ ChatPharoOllamaSettingsPresenter >> refreshModels [
     (availableModels isEmpty)
         ifFalse: [
             (currentModel isNil or: [ (availableModels includes: currentModel) not ])
-                ifTrue: [ modelsDrop selectFirst ].
+                ifTrue: [ modelsDrop selectFirst ]
+                ifFalse: [ modelsDrop selectItem: currentModel ].
         ].
 ]
 
