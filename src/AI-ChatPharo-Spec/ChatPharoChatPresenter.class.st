@@ -272,6 +272,7 @@ ChatPharoChatPresenter >> initializePresenters [
 	attachedFilesLayout := SpBoxLayout newVertical.
 	attachedFilesPresenter := SpPresenter new.
 	attachedFilesPresenter layout: attachedFilesLayout.
+	attachedFilesPresenter visible: false.
 
 	messagesLayout := SpBoxLayout newVertical.
 	scrollableMessages := SpPresenter new.
@@ -442,7 +443,10 @@ ChatPharoChatPresenter >> updateAttachedFilesDisplay [
 	attachedFilesLayout := SpBoxLayout newVertical spacing: 2.
 	attachedFilesPresenter layout: attachedFilesLayout.
 
-	attachedFiles ifEmpty: [ ^ self ].
+	attachedFiles ifEmpty: [ 
+    attachedFilesPresenter visible: false.
+    	^ self ].
+	attachedFilesPresenter visible: true.
 
 	attachedFiles do: [ :fileRef |
 		| fileLayout nameLabel removeButton |
