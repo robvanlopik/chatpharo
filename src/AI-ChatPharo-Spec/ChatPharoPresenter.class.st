@@ -31,6 +31,7 @@ ChatPharoPresenter >> addNewChat [
 		           title: chatName
 		           icon: (self iconNamed: #announcement)
 		           provider: [ model ifNotNil: [ model chats last presenter ] ifNil: [ nil ] ].
+	newPage beCloseable.
 		
 	newChat ifNotNil: [ 
 		newChat whenTitleGeneratedDo: [ :title |
@@ -44,6 +45,21 @@ ChatPharoPresenter >> addNewChat [
 			 at: 'totalTabs' put: notebook pages size;
 			 at: 'chatCounter' put: chatCounter;
 			 yourself)
+]
+
+{ #category : 'as yet unclassified' }
+ChatPharoPresenter >> closeChat: aPage [
+    | pageIndex |
+    pageIndex := notebook pages indexOf: aPage ifAbsent: [ ^ self ].
+    notebook removePage: aPage.
+    model removeChatAt: pageIndex.
+    ChatPharoLogger logFrontend: 'UI closed chat tab'
+        details: (Dictionary new
+                at: 'title' put: aPage title;
+                at: 'index' put: pageIndex;
+                at: 'remainingTabs' put: notebook pages size;
+                yourself).
+    notebook pages ifEmpty: [ self addNewChat ]
 ]
 
 { #category : 'layout' }
@@ -109,9 +125,15 @@ ChatPharoPresenter >> deleteSelectedChat [
 
 { #category : 'initialization' }
 ChatPharoPresenter >> initializePresenters [
+
 	chatCounter := 0.
-	
+
 	notebook := self newNotebook.
+	notebook whenPageRemovedDo: [ :page |
+			| pageIndex |
+			pageIndex := notebook pages indexOf: page ifAbsent: [ nil ].
+			pageIndex ifNotNil: [ model removeChatAt: pageIndex ].
+			notebook pages ifEmpty: [ self addNewChat ] ].
 	toolbar := self newToolbar.
 	disclaimerLabel := self newLabel
 		                   label: 'ChatPharo may make mistakes. Check important info.';
@@ -202,7 +224,7 @@ ChatPharoPresenter >> initializePresenters [
 	ChatPharoLogger logFrontend: 'Main presenter initialized' details: (Dictionary new
 			 at: 'initialTabs' put: notebook pages size;
 			 yourself).
-	notebook pages ifEmpty: [ self addNewChat ].
+	notebook pages ifEmpty: [ self addNewChat ]
 ]
 
 { #category : 'initialization' }
