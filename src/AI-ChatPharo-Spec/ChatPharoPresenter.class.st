@@ -263,6 +263,7 @@ ChatPharoPresenter >> loadChat [
 			title: chatName
 			icon: (self iconNamed: #announcement)
 			provider: [ model chats last presenter ].
+		newPage beCloseable.
 		notebook addPage: newPage.
 		notebook selectPage: newPage.
 
