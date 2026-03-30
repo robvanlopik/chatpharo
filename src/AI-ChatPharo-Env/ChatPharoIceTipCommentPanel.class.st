@@ -1,6 +1,9 @@
 Class {
 	#name : 'ChatPharoIceTipCommentPanel',
 	#superclass : 'IceTipCommentPanel',
+	#instVars : [
+		'generateButton'
+	],
 	#category : 'AI-ChatPharo-Env-Iceberg',
 	#package : 'AI-ChatPharo-Env',
 	#tag : 'Iceberg'
@@ -44,6 +47,20 @@ ChatPharoIceTipCommentPanel >> commitMessageSystemPrompt [
 			<< 'Pick one prefix (#feat:, #fix:, #refactor:, #chore:, #comment:) and write an imperative concise message.' ]
 ]
 
+{ #category : 'layout' }
+ChatPharoIceTipCommentPanel >> defaultLayout [
+
+	^ SpBoxLayout newTopToBottom
+		  add: commentText;
+		  add: (SpBoxLayout newLeftToRight
+				   spacing: 5;
+				   add: generateButton;
+				   addLast: optionsButton;
+				   yourself)
+		  expand: false;
+		  yourself
+]
+
 { #category : 'private' }
 ChatPharoIceTipCommentPanel >> generateCommitMessage [
 	"Generates a commit message using the configured ChatPharo agent and displays it in the commentText."
@@ -67,10 +84,10 @@ ChatPharoIceTipCommentPanel >> generateCommitMessage [
 ChatPharoIceTipCommentPanel >> initializePresenters [
 
 	super initializePresenters.
-	optionsButton add: (self newToolbarButton
+	generateButton := self newButton
 			 icon: (self application iconNamed: #smallLeftFlush);
 			 label: 'Generate commit message';
 			 help: 'Generate the commit message based on the work';
 			 action: [ self generateCommitMessage ];
-			 yourself)
+			 yourself
 ]
