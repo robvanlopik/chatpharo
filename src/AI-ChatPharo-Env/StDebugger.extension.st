@@ -6,7 +6,6 @@ StDebugger class >> chatPharoBrowseCommandWith: aPresenter forRootGroup: aCmComm
 	| command stackGroup decoratedGroup |
 
 	command := StAskChatPharoFromDebuggerCommand forSpecContext: aPresenter.
-
 	stackGroup := aCmCommandsGroup / StDebuggerStackCommandTreeBuilder groupName.
 	decoratedGroup := stackGroup decoratedGroup.
 

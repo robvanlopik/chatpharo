@@ -17,7 +17,7 @@ StAskChatPharoFromDebuggerCommand class >> defaultIconName [
 
 	"Use a named icon because StDebuggerCommand>>forSpecContext:
 	expects an icon name symbol."
-	^ #announcement
+	^ #chatPharoIcon
 ]
 
 { #category : 'default' }
@@ -30,6 +30,12 @@ StAskChatPharoFromDebuggerCommand class >> defaultName [
 StAskChatPharoFromDebuggerCommand class >> defaultShortcut [
 
 	^ nil
+]
+
+{ #category : 'initialization' }
+StAskChatPharoFromDebuggerCommand class >> icon [
+
+	^ ChatPharoIcons chatPharoIcon
 ]
 
 { #category : 'testing' }
