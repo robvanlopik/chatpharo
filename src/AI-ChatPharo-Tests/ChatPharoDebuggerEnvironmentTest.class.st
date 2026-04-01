@@ -156,7 +156,7 @@ ChatPharoDebuggerEnvironmentTest >> testToolsCount [
 	| ctx env |
 	ctx := ChatPharoDebuggerContext new.
 	env := ChatPharoDebuggerEnvironment forContext: ctx.
-	self assert: env tools size equals: 6
+	self assert: env tools size equals: 7
 ]
 
 { #category : 'tests' }
