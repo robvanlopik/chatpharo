@@ -1,3 +1,9 @@
+"
+Compact status presenter that reflects the AI's active reasoning lifecycle.
+
+It animates and summarizes thinking state, elapsed time, and tool activity in a
+single button, and opens a detail window for deeper inspection when requested.
+"
 Class {
 	#name : 'ChatPharoThinkingPresenter',
 	#superclass : 'SpPresenter',
