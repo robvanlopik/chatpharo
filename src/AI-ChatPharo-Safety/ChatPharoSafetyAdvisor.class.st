@@ -1,3 +1,12 @@
+"
+Provides centralized safety guidance and default setup behavior for ChatPharo.
+
+This advisor class is responsible for:
+- applying a curated, secure default configuration in progressive steps,
+- presenting confirmation prompts before risky setting changes,
+- warning users when enabling external APIs, and
+- enforcing developer-only safeguards for sensitive operations.
+"
 Class {
 	#name : 'ChatPharoSafetyAdvisor',
 	#superclass : 'Object',
