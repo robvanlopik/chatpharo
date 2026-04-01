@@ -1,3 +1,8 @@
+"
+System-browser ChatPharo tab specialized for class-level conversations.
+
+It derives context from the selected package/class pair and propagates that information to the active chat agent.
+"
 Class {
 	#name : 'ChatPharoClassBrowser',
 	#superclass : 'ChatPharoPackageBrowser',

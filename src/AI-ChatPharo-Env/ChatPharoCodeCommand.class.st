@@ -1,3 +1,8 @@
+"
+Command integrated in the System Browser method menu to request code generation/refactoring help from ChatPharo.
+
+It is enabled only when the Code feature is turned on and works on the selected method.
+"
 Class {
 	#name : 'ChatPharoCodeCommand',
 	#superclass : 'CmdCommand',

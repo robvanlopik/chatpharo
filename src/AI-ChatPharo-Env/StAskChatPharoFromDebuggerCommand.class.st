@@ -1,3 +1,8 @@
+"
+Debugger command that opens ChatPharo for the selected stack-frame method.
+
+Use this command to ask for explanations or guidance while investigating a failing execution context.
+"
 Class {
 	#name : 'StAskChatPharoFromDebuggerCommand',
 	#superclass : 'StDebuggerCommand',

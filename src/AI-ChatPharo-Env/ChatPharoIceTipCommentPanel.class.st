@@ -1,3 +1,8 @@
+"
+Iceberg commit comment panel extension that adds a button to generate commit messages with ChatPharo.
+
+It reuses the standard comment panel and injects a prompt tailored to the configured commit template.
+"
 Class {
 	#name : 'ChatPharoIceTipCommentPanel',
 	#superclass : 'IceTipCommentPanel',

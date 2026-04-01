@@ -1,3 +1,8 @@
+"
+System-browser ChatPharo tab specialized for method-level conversations.
+
+It tracks package, class, and selector from the current browser selection and forwards that scope to the agent.
+"
 Class {
 	#name : 'ChatPharoMethodBrowser',
 	#superclass : 'ChatPharoPackageBrowser',

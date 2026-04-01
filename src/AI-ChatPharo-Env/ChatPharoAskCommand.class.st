@@ -1,3 +1,8 @@
+"
+Command integrated in the System Browser method menu to ask ChatPharo about the currently selected method.
+
+It is enabled only when the Ask feature is turned on and binds both a context-menu entry and a keyboard shortcut.
+"
 Class {
 	#name : 'ChatPharoAskCommand',
 	#superclass : 'CmdCommand',

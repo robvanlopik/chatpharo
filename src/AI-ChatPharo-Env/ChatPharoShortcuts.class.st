@@ -1,3 +1,8 @@
+"
+Defines and installs global keyboard shortcuts for opening ChatPharo.
+
+This class centralizes keymap registration so integrations can bind ChatPharo commands consistently.
+"
 Class {
 	#name : 'ChatPharoShortcuts',
 	#superclass : 'Object',
