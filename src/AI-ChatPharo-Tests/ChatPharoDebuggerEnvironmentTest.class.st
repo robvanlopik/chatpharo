@@ -17,6 +17,30 @@ ChatPharoDebuggerEnvironmentTest >> testCreation [
 ]
 
 { #category : 'tests' }
+ChatPharoDebuggerEnvironmentTest >> testGetClassHierarchyToolClassNotFound [
+
+	| ctx env tool result |
+	ctx := ChatPharoDebuggerContext new.
+	env := ChatPharoDebuggerEnvironment forContext: ctx.
+	tool := env tools detect: [ :t | t name = 'get_class_hierarchy' ].
+	result := tool applyTo: (Dictionary with: 'class_name' -> 'NonExistentClass12345').
+	self assert: (result includesKey: 'error')
+]
+
+{ #category : 'tests' }
+ChatPharoDebuggerEnvironmentTest >> testGetClassHierarchyToot [
+
+	| ctx env tool result |
+	ctx := ChatPharoDebuggerContext new.
+	env := ChatPharoDebuggerEnvironment forContext: ctx.
+	tool := env tools detect: [ :t | t name = 'get_class_hierarchy' ].
+	result := tool applyTo: (Dictionary with: 'class_name' -> 'OrderedCollection').
+	self assert: (result at: 'class') equals: 'OrderedCollection'.
+	self assert: (result at: 'hierarchy') notEmpty.
+	self assert: (result at: 'depth') > 1
+]
+
+{ #category : 'tests' }
 ChatPharoDebuggerEnvironmentTest >> testGetErrorDetailsToolReturnsErrorInfo [
 
 	| ctx env tool result |
@@ -31,6 +55,19 @@ ChatPharoDebuggerEnvironmentTest >> testGetErrorDetailsToolReturnsErrorInfo [
 	self assert: (result at: 'exception_class') equals: 'ZeroDivide'.
 	self assert: (result at: 'error_message') equals: 'division by zero'.
 	self assert: (result at: 'failing_class') equals: 'SmallInteger'
+]
+
+{ #category : 'tests' }
+ChatPharoDebuggerEnvironmentTest >> testGetImplementorsTool [
+
+	| ctx env tool result |
+	ctx := ChatPharoDebuggerContext new.
+	env := ChatPharoDebuggerEnvironment forContext: ctx.
+	tool := env tools detect: [ :t | t name = 'get_implementors' ].
+	result := tool applyTo: (Dictionary with: 'selector' -> 'yourself').
+	self assert: (result at: 'selector') equals: 'yourself'.
+	self assert: (result at: 'count') > 0.
+	self assert: (result at: 'implementors') notEmpty
 ]
 
 { #category : 'tests' }
@@ -83,6 +120,46 @@ ChatPharoDebuggerEnvironmentTest >> testGetReceiverStateToolReturnsState [
 	result := tool applyTo: Dictionary new.
 	self assert: (result at: 'receiver_class') equals: 'OrderedCollection'.
 	self assert: (result at: 'count') equals: 2
+]
+
+{ #category : 'tests' }
+ChatPharoDebuggerEnvironmentTest >> testGetSendersTool [
+
+	| ctx env tool result |
+	ctx := ChatPharoDebuggerContext new.
+	env := ChatPharoDebuggerEnvironment forContext: ctx.
+	tool := env tools detect: [ :t | t name = 'get_senders' ].
+	result := tool applyTo: (Dictionary with: 'selector' -> 'yourself').
+	self assert: (result at: 'selector') equals: 'yourself'.
+	self assert: (result at: 'count') > 0
+]
+
+{ #category : 'tests' }
+ChatPharoDebuggerEnvironmentTest >> testGetStackFrameDetailsTool [
+
+	| ctx env tool result |
+	ctx := ChatPharoDebuggerContext new.
+	ctx stackFrameDetails: (OrderedCollection with: (Dictionary
+		with: 'method' -> 'MyClass>>foo'
+		with: 'locals' -> (Dictionary with: 'x' -> '42')
+		with: 'pc' -> 10
+		with: 'source' -> 'foo ^ x')).
+	env := ChatPharoDebuggerEnvironment forContext: ctx.
+	tool := env tools detect: [ :t | t name = 'get_stack_frame_details' ].
+	result := tool applyTo: Dictionary new.
+	self assert: (result at: 'count') equals: 1.
+	self assert: (result at: 'frames') first equals: ctx stackFrameDetails first
+]
+
+{ #category : 'tests' }
+ChatPharoDebuggerEnvironmentTest >> testGetStackFrameDetailsToolWhenEmpty [
+
+	| ctx env tool result |
+	ctx := ChatPharoDebuggerContext new.
+	env := ChatPharoDebuggerEnvironment forContext: ctx.
+	tool := env tools detect: [ :t | t name = 'get_stack_frame_details' ].
+	result := tool applyTo: Dictionary new.
+	self assert: (result includesKey: 'info')
 ]
 
 { #category : 'tests' }
@@ -147,6 +224,10 @@ ChatPharoDebuggerEnvironmentTest >> testToolsCanBeRegisteredAsTemporalTools [
 	self assert: registry size equals: env tools size.
 	self assert: (registry hasToolNamed: 'get_error_details').
 	self assert: (registry hasToolNamed: 'get_stack_trace').
+	self assert: (registry hasToolNamed: 'get_stack_frame_details').
+	self assert: (registry hasToolNamed: 'get_class_hierarchy').
+	self assert: (registry hasToolNamed: 'get_senders').
+	self assert: (registry hasToolNamed: 'get_implementors').
 	self assert: (registry hasToolNamed: 'suggest_fix_code')
 ]
 
@@ -156,7 +237,7 @@ ChatPharoDebuggerEnvironmentTest >> testToolsCount [
 	| ctx env |
 	ctx := ChatPharoDebuggerContext new.
 	env := ChatPharoDebuggerEnvironment forContext: ctx.
-	self assert: env tools size equals: 7
+	self assert: env tools size equals: 11
 ]
 
 { #category : 'tests' }

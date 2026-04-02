@@ -48,6 +48,31 @@ ChatPharoDebuggerContextTest >> testCaptureStackFromContext [
 ]
 
 { #category : 'tests' }
+ChatPharoDebuggerContextTest >> testClassHierarchyAccessors [
+
+	| ctx hierarchy |
+	ctx := ChatPharoDebuggerContext new.
+	self assert: ctx classHierarchy isNil.
+	hierarchy := OrderedCollection with: (Dictionary with: 'name' -> 'Object').
+	ctx classHierarchy: hierarchy.
+	self assert: ctx classHierarchy equals: hierarchy
+]
+
+{ #category : 'tests' }
+ChatPharoDebuggerContextTest >> testDiagnosticPromptContainsClassHierarchy [
+
+	| ctx prompt |
+	ctx := ChatPharoDebuggerContext new.
+	ctx classHierarchy: (OrderedCollection
+		with: (Dictionary with: 'name' -> 'MyClass' with: 'instanceVariables' -> #( 'x' 'y' ))
+		with: (Dictionary with: 'name' -> 'Object' with: 'instanceVariables' -> #())).
+	prompt := ctx diagnosticPrompt.
+	self assert: (prompt includesSubstring: 'Class Hierarchy').
+	self assert: (prompt includesSubstring: 'MyClass').
+	self assert: (prompt includesSubstring: 'x')
+]
+
+{ #category : 'tests' }
 ChatPharoDebuggerContextTest >> testDiagnosticPromptContainsErrorInfo [
 
 	| ctx prompt |
@@ -77,6 +102,40 @@ ChatPharoDebuggerContextTest >> testDiagnosticPromptContainsErrorInfo [
 ]
 
 { #category : 'tests' }
+ChatPharoDebuggerContextTest >> testDiagnosticPromptContainsFailingExpression [
+	| ctx prompt |
+	ctx := ChatPharoDebuggerContext new.
+	ctx errorClassName: 'MessageNotUnderstood'.
+	ctx errorMessage: 'receiver was nil'.
+	ctx failingExpression: 'self foo bar'.
+	prompt := ctx diagnosticPrompt.
+	self assert: (prompt includesSubstring: 'Failing expression').
+	self assert: (prompt includesSubstring: 'self foo bar')
+]
+
+{ #category : 'tests' }
+ChatPharoDebuggerContextTest >> testDiagnosticPromptContainsStackFrameDetails [
+
+	| ctx prompt |
+	ctx := ChatPharoDebuggerContext new.
+	ctx stackFrameDetails: (OrderedCollection
+		with: (Dictionary
+			with: 'method' -> 'MyClass>>foo'
+			with: 'locals' -> (Dictionary with: 'x' -> '10')
+			with: 'pc' -> 5
+			with: 'source' -> 'foo ^ x')
+		with: (Dictionary
+			with: 'method' -> 'MyClass>>bar'
+			with: 'locals' -> (Dictionary with: 'y' -> '20')
+			with: 'pc' -> 8
+			with: 'source' -> 'bar ^ self foo')).
+	prompt := ctx diagnosticPrompt.
+	self assert: (prompt includesSubstring: 'Nearby Stack Frames').
+	self assert: (prompt includesSubstring: 'MyClass>>foo').
+	self assert: (prompt includesSubstring: 'MyClass>>bar')
+]
+
+{ #category : 'tests' }
 ChatPharoDebuggerContextTest >> testDiagnosticPromptWithMinimalInfo [
 
 	| ctx prompt |
@@ -84,6 +143,16 @@ ChatPharoDebuggerContextTest >> testDiagnosticPromptWithMinimalInfo [
 	prompt := ctx diagnosticPrompt.
 	self assert: (prompt includesSubstring: 'debugging an error').
 	self assert: (prompt includesSubstring: 'Unknown')
+]
+
+{ #category : 'tests' }
+ChatPharoDebuggerContextTest >> testFailingExpressionAccessors [
+
+	| ctx |
+	ctx := ChatPharoDebuggerContext new.
+	self assert: ctx failingExpression isNil.
+	ctx failingExpression: 'self foo'.
+	self assert: ctx failingExpression equals: 'self foo'
 ]
 
 { #category : 'tests' }
@@ -99,6 +168,17 @@ ChatPharoDebuggerContextTest >> testForErrorMethod [
 ]
 
 { #category : 'tests' }
+ChatPharoDebuggerContextTest >> testStackFrameDetailsAccessors [
+
+	| ctx frames |
+	ctx := ChatPharoDebuggerContext new.
+	self assert: ctx stackFrameDetails isNil.
+	frames := OrderedCollection with: (Dictionary with: 'method' -> 'MyClass>>foo').
+	ctx stackFrameDetails: frames.
+	self assert: ctx stackFrameDetails equals: frames
+]
+
+{ #category : 'tests' }
 ChatPharoDebuggerContextTest >> testSystemPromptForDebugging [
 
 	| ctx prompt |
@@ -106,5 +186,7 @@ ChatPharoDebuggerContextTest >> testSystemPromptForDebugging [
 	prompt := ctx systemPromptForDebugging.
 	self assert: (prompt includesSubstring: 'expert').
 	self assert: (prompt includesSubstring: 'Pharo').
-	self assert: (prompt includesSubstring: 'debugger')
+	self assert: (prompt includesSubstring: 'debugger').
+	self assert: (prompt includesSubstring: 'MessageNotUnderstood').
+	self assert: (prompt includesSubstring: 'suggest_fix_code')
 ]

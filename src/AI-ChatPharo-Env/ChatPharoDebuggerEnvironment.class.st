@@ -45,6 +45,40 @@ ChatPharoDebuggerEnvironment >> debuggerContext [
 ]
 
 { #category : 'tools' }
+ChatPharoDebuggerEnvironment >> functionGetClassHierarchy [
+
+	^ ChatPharoClient
+		  name: 'get_class_hierarchy'
+		  description: 'Returns the class hierarchy (superclasses) for a given class, including instance variable names and protocols at each level. Useful for understanding inheritance context when debugging.'
+		  parameters: (Dictionary
+			   with: 'type' -> 'object'
+			   with: 'properties' -> (Dictionary
+					    with: 'class_name' -> (Dictionary
+							 with: 'type' -> 'string'
+							 with: 'description' -> 'The class name to inspect (e.g. OrderedCollection)'))
+			   with: 'required' -> #( 'class_name' ))
+		  block: [ :arguments |
+			  | className theClass hierarchy cls |
+			  className := arguments at: 'class_name'.
+			  theClass := Smalltalk classNamed: className.
+			  theClass ifNil: [
+				  ^ Dictionary with: 'error' -> ('Class not found: ' , className) ].
+			  hierarchy := OrderedCollection new.
+			  cls := theClass.
+			  [ cls notNil and: [ hierarchy size < 15 ] ] whileTrue: [
+				  hierarchy add: (Dictionary new
+					  at: 'name' put: cls name asString;
+					  at: 'instanceVariables' put: (cls instVarNames collect: #asString) asArray;
+					  at: 'methodCount' put: cls localMethods size;
+					  yourself).
+				  cls := cls superclass ].
+			  Dictionary
+				  with: 'class' -> className
+				  with: 'hierarchy' -> hierarchy asArray
+				  with: 'depth' -> hierarchy size ]
+]
+
+{ #category : 'tools' }
 ChatPharoDebuggerEnvironment >> functionGetErrorDetails [
 
 	^ ChatPharoClient
@@ -62,6 +96,34 @@ ChatPharoDebuggerEnvironment >> functionGetErrorDetails [
 				  at: 'failing_selector' put: (debuggerContext failingSelector ifNil: [ 'unknown' ]);
 				  at: 'failing_package' put: (debuggerContext failingPackageName ifNil: [ 'Unknown' ]);
 				  yourself ]
+]
+
+{ #category : 'tools' }
+ChatPharoDebuggerEnvironment >> functionGetImplementors [
+
+	^ ChatPharoClient
+		  name: 'get_implementors'
+		  description: 'Returns all classes that implement a given selector. Helps understand which classes provide this method and whether a missing override or wrong dispatch is causing the bug.'
+		  parameters: (Dictionary
+			   with: 'type' -> 'object'
+			   with: 'properties' -> (Dictionary
+					    with: 'selector' -> (Dictionary
+							 with: 'type' -> 'string'
+							 with: 'description' -> 'The selector to find implementors of (e.g. add:)'))
+			   with: 'required' -> #( 'selector' ))
+		  block: [ :arguments |
+			  | selector implementors maxResults |
+			  selector := arguments at: 'selector'.
+			  maxResults := 30.
+			  implementors := (Smalltalk allClassesAndTraits
+				  select: [ :cls | cls includesSelector: selector asSymbol ]
+				  thenCollect: [ :cls | cls name asString ]).
+			  implementors size > maxResults ifTrue: [
+				  implementors := implementors first: maxResults ].
+			  Dictionary
+				  with: 'selector' -> selector
+				  with: 'implementors' -> implementors asArray
+				  with: 'count' -> implementors size ]
 ]
 
 { #category : 'tools' }
@@ -138,6 +200,55 @@ ChatPharoDebuggerEnvironment >> functionGetReceiverState [
 						  with: 'receiver_class' -> (debuggerContext receiverClassName ifNil: [ 'Unknown' ])
 						  with: 'instance_variables' -> state
 						  with: 'count' -> state size ] ]
+]
+
+{ #category : 'tools' }
+ChatPharoDebuggerEnvironment >> functionGetSenders [
+
+	^ ChatPharoClient
+		  name: 'get_senders'
+		  description: 'Returns methods that send a given selector. Helps trace how the failing method was called and understand the call chain that led to the bug.'
+		  parameters: (Dictionary
+			   with: 'type' -> 'object'
+			   with: 'properties' -> (Dictionary
+					    with: 'selector' -> (Dictionary
+							 with: 'type' -> 'string'
+							 with: 'description' -> 'The selector to find senders of (e.g. add:)'))
+			   with: 'required' -> #( 'selector' ))
+		  block: [ :arguments |
+			  | selector senders maxResults |
+			  selector := arguments at: 'selector'.
+			  maxResults := 30.
+			  senders := SystemNavigation default allSendersOf: selector asSymbol.
+			  senders := senders collect: [ :ref |
+				  ref methodClass name asString , '>>' , ref selector asString ].
+			  senders size > maxResults ifTrue: [
+				  senders := senders first: maxResults ].
+			  Dictionary
+				  with: 'selector' -> selector
+				  with: 'senders' -> senders asArray
+				  with: 'count' -> senders size ]
+]
+
+{ #category : 'tools' }
+ChatPharoDebuggerEnvironment >> functionGetStackFrameDetails [
+
+	^ ChatPharoClient
+		  name: 'get_stack_frame_details'
+		  description: 'Returns detailed information for the top stack frames captured from the debugger, including local variable names and values at each frame. More detailed than get_stack_trace.'
+		  parameters: (Dictionary
+			   with: 'type' -> 'object'
+			   with: 'properties' -> Dictionary new
+			   with: 'required' -> #())
+		  block: [ :arguments |
+			  | details |
+			  details := debuggerContext stackFrameDetails.
+			  (details isNil or: [ details isEmpty ])
+				  ifTrue: [ Dictionary with: 'info' -> 'No detailed frame info captured' ]
+				  ifFalse: [
+					  Dictionary
+						  with: 'frames' -> details asArray
+						  with: 'count' -> details size ] ]
 ]
 
 { #category : 'tools' }
@@ -235,10 +346,14 @@ ChatPharoDebuggerEnvironment >> initializeWithContext: aChatPharoDebuggerContext
 	tools := {
 		         self functionGetErrorDetails.
 		         self functionGetStackTrace.
+		self functionGetStackFrameDetails.
 		         self functionGetLocalVariables.
 		         self functionGetReceiverState.
-		self functionRecreateBugRecipe.
+		 self functionGetClassHierarchy.
+		         self functionGetSenders.
+		         self functionGetImplementors.
 		         self functionGetMethodSourceInStack.
+				self functionRecreateBugRecipe.
 		         self functionSuggestFix } asOrderedCollection
 ]
 
