@@ -49,33 +49,34 @@ ChatPharoDebuggerEnvironment >> functionGetClassHierarchy [
 
 	^ ChatPharoClient
 		  name: 'get_class_hierarchy'
-		  description: 'Returns the class hierarchy (superclasses) for a given class, including instance variable names and protocols at each level. Useful for understanding inheritance context when debugging.'
+		  description:
+		  'Returns the class hierarchy (superclasses) for a given class, including instance variable names and protocols at each level. Useful for understanding inheritance context when debugging.'
 		  parameters: (Dictionary
-			   with: 'type' -> 'object'
-			   with: 'properties' -> (Dictionary
-					    with: 'class_name' -> (Dictionary
-							 with: 'type' -> 'string'
-							 with: 'description' -> 'The class name to inspect (e.g. OrderedCollection)'))
-			   with: 'required' -> #( 'class_name' ))
+				   with: 'type' -> 'object'
+				   with: 'properties' -> (Dictionary with:
+						    'class_name'
+						    -> (Dictionary with: 'type' -> 'string' with: 'description' -> 'The class name to inspect (e.g. OrderedCollection)'))
+				   with: 'required' -> #( 'class_name' ))
 		  block: [ :arguments |
-			  | className theClass hierarchy cls |
-			  className := arguments at: 'class_name'.
-			  theClass := Smalltalk classNamed: className.
-			  theClass ifNil: [
-				  ^ Dictionary with: 'error' -> ('Class not found: ' , className) ].
-			  hierarchy := OrderedCollection new.
-			  cls := theClass.
-			  [ cls notNil and: [ hierarchy size < 15 ] ] whileTrue: [
-				  hierarchy add: (Dictionary new
-					  at: 'name' put: cls name asString;
-					  at: 'instanceVariables' put: (cls instVarNames collect: #asString) asArray;
-					  at: 'methodCount' put: cls localMethods size;
-					  yourself).
-				  cls := cls superclass ].
-			  Dictionary
-				  with: 'class' -> className
-				  with: 'hierarchy' -> hierarchy asArray
-				  with: 'depth' -> hierarchy size ]
+				  | className theClass hierarchy cls |
+				  className := arguments at: 'class_name'.
+				  theClass := Smalltalk classNamed: className.
+				 theClass
+				  ifNil: [ Dictionary with: 'error' -> ('Class not found: ' , className) ]
+				  ifNotNil: [
+					  hierarchy := OrderedCollection new.
+					  cls := theClass.
+					  [ cls notNil and: [ hierarchy size < 15 ] ] whileTrue: [
+						  hierarchy add: (Dictionary new
+							  at: 'name' put: cls name asString;
+							  at: 'instanceVariables' put: (cls instVarNames collect: #asString) asArray;
+							  at: 'methodCount' put: cls localMethods size;
+							  yourself).
+						  cls := cls superclass ].
+					  Dictionary
+						  with: 'class' -> className
+						  with: 'hierarchy' -> hierarchy asArray
+						  with: 'depth' -> hierarchy size ] ]
 ]
 
 { #category : 'tools' }
@@ -154,30 +155,29 @@ ChatPharoDebuggerEnvironment >> functionGetMethodSourceInStack [
 		  name: 'get_method_source_in_stack'
 		  description: 'Returns the source code of any method visible in the stack trace. Provide the class name and selector.'
 		  parameters: (Dictionary
-			   with: 'type' -> 'object'
-			   with: 'properties' -> (Dictionary
-					    with: 'class_name' -> (Dictionary
-							 with: 'type' -> 'string'
-							 with: 'description' -> 'The class name (e.g. OrderedCollection)')
-					    with: 'selector' -> (Dictionary
-							 with: 'type' -> 'string'
-							 with: 'description' -> 'The method selector (e.g. add:)'))
-			   with: 'required' -> #( 'class_name' 'selector' ))
+				   with: 'type' -> 'object'
+				   with: 'properties' -> (Dictionary
+						    with:
+						    'class_name' -> (Dictionary with: 'type' -> 'string' with: 'description' -> 'The class name (e.g. OrderedCollection)')
+						    with: 'selector' -> (Dictionary with: 'type' -> 'string' with: 'description' -> 'The method selector (e.g. add:)'))
+				   with: 'required' -> #( 'class_name' 'selector' ))
 		  block: [ :arguments |
-			  | className selector theClass method |
-			  className := arguments at: 'class_name'.
-			  selector := arguments at: 'selector'.
-			  theClass := Smalltalk classNamed: className.
-			  theClass ifNil: [
-				  ^ Dictionary with: 'error' -> ('Class not found: ' , className) ].
-			  method := theClass lookupSelector: selector asSymbol.
-			  method ifNil: [
-				  ^ Dictionary with: 'error' -> ('Method not found: ' , className , '>>' , selector) ].
-			  Dictionary
-				  with: 'class' -> className
-				  with: 'selector' -> selector
-				  with: 'source' -> method sourceCode
-				  with: 'protocol' -> method protocolName ]
+				  | className selector theClass method |
+				  className := arguments at: 'class_name'.
+				  selector := arguments at: 'selector'.
+				  theClass := Smalltalk classNamed: className.
+				  theClass
+				  ifNil: [ Dictionary with: 'error' -> ('Class not found: ' , className) ]
+				  ifNotNil: [
+					  method := theClass lookupSelector: selector asSymbol.
+					  method
+						  ifNil: [ Dictionary with: 'error' -> ('Method not found: ' , className , '>>' , selector) ]
+						  ifNotNil: [
+							  Dictionary
+								  with: 'class' -> className
+								  with: 'selector' -> selector
+								  with: 'source' -> method sourceCode
+								  with: 'protocol' -> method protocolName ] ] ]
 ]
 
 { #category : 'tools' }
