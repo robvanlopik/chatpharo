@@ -364,6 +364,17 @@ ChatPharoChat >> jsonStringFor: anObject [
 ]
 
 { #category : 'accessing' }
+ChatPharoChat >> messageLimitReached [
+
+	| settings limit |
+	settings := ChatPharoSettings default.
+	settings ethicsDirectorEnabled ifFalse: [ ^ false ].
+	limit := settings messageLimit.
+	(limit isNil or: [ limit isNumber not ]) ifTrue: [ ^ false ].
+	^ messages size >= limit
+]
+
+{ #category : 'accessing' }
 ChatPharoChat >> messages [
 
 	^ messages
@@ -465,6 +476,22 @@ ChatPharoChat >> recordUserPreference: preferenceText [
 				 yourself)
 ]
 
+{ #category : 'accessing' }
+ChatPharoChat >> reportMessageLimitReached [
+
+	| limit text |
+	limit := ChatPharoSettings default messageLimit.
+	text := 'Message limit reached (' , limit asString
+		, '). Update the limit in Settings > Ethics or start a new chat.'.
+	ChatPharoLogger logFrontend: 'Message limit enforced'
+		details: (Dictionary new
+			at: 'chatId' put: self identityHash;
+			at: 'limit' put: limit;
+			at: 'messages' put: messages size;
+			yourself).
+	onErrorReceived ifNotNil: [ :blk | blk value: text ]
+]
+
 { #category : 'initialization' }
 ChatPharoChat >> requestNewChat [ 
 
@@ -492,20 +519,22 @@ ChatPharoChat >> resetConversation [
 ChatPharoChat >> sendMessage: aText [
 
 	| answer multivers promptWithMemory historyPrefix combinedPrefix |
+	self messageLimitReached ifTrue: [
+		^ self reportMessageLimitReached ].
 	self addUserMessage: aText.
 
 	(cache includesKey: aText) ifTrue: [
 			answer := cache at: aText.
 			self addAssistantMessage: answer.
 			onAnswerReceived ifNotNil: [ :blk | blk value: messages last ].
-			^ self ]. "Check if multivers mode is enabled and can execute"
+			^ self ].
 	multivers := ChatPharoSettings default multivers.
-	(multivers notNil and: [ multivers canExecute ]) ifTrue: [ ^ self sendMessageViaMultivers: aText ]. "Standard single-agent execution"
+	(multivers notNil and: [ multivers canExecute ]) ifTrue: [ ^ self sendMessageViaMultivers: aText ].
 	promptProcess := [
 		                 [
 			                 | backend |
 			                 backend := self agent.
-			                backend onToolExecution: [ :toolName | self triggerToolExecution: toolName ].
+			                 backend onToolExecution: [ :toolName | self triggerToolExecution: toolName ].
 			                 promptWithMemory := self buildPromptPrefixWithMemoryFor: aText.
 
 			                 backend promptPrefix: promptWithMemory.
@@ -526,6 +555,8 @@ ChatPharoChat >> sendMessage: aText [
 ChatPharoChat >> sendMessage: aText withAttachments: attachmentCollection [
 
 	| answer multivers promptWithMemory textWithAttachments |
+		self messageLimitReached ifTrue: [
+		^ self reportMessageLimitReached ].
 	self addUserMessage: aText withAttachments: attachmentCollection.
 	textWithAttachments := aText.
 	attachmentCollection ifNotEmpty: [
@@ -577,7 +608,7 @@ ChatPharoChat >> sendMessage: aText withAttachments: attachmentCollection [
 					                 titleGenerated := true.
 					                 self generateTitleFrom: aText ] ]
 			                 on: Error
-			                 do: [ :ex | 
+			                 do: [ :ex |
 					                 ChatPharoLogger logBackend: 'Error during message send' details: (Dictionary new
 							                  at: 'chatId' put: self identityHash;
 							                  at: 'error' put: ex messageText;
@@ -588,39 +619,35 @@ ChatPharoChat >> sendMessage: aText withAttachments: attachmentCollection [
 { #category : 'running' }
 ChatPharoChat >> sendMessageViaMultivers: aText [
 
-	"Execute the message through the multivers chain"
-
 	| multivers |
+		self messageLimitReached ifTrue: [
+		^ self reportMessageLimitReached ].
 	multivers := ChatPharoSettings default multivers.
 
 	promptProcess := [
-		[
-			| answer |
-			ChatPharoLogger logBackend: 'Starting multivers chain execution'
-				details: (Dictionary new
-					at: 'prompt' put: aText;
-					at: 'stepsCount' put: multivers stepsCount;
-					yourself).
+		                 [
+			                 | answer |
+			                 ChatPharoLogger logBackend: 'Starting multivers chain execution' details: (Dictionary new
+					                  at: 'prompt' put: aText;
+					                  at: 'stepsCount' put: multivers stepsCount;
+					                  yourself).
 
-			answer := multivers executeForPrompt: aText.
-			cache at: aText put: answer.
-			self addAssistantMessage: answer.
+			                 answer := multivers executeForPrompt: aText.
+			                 cache at: aText put: answer.
+			                 self addAssistantMessage: answer.
 
-			ChatPharoLogger logBackend: 'Multivers chain execution completed'
-				details: (Dictionary new
-					at: 'responseLength' put: answer size;
-					yourself).
+			                 ChatPharoLogger logBackend: 'Multivers chain execution completed' details: (Dictionary new
+					                  at: 'responseLength' put: answer size;
+					                  yourself).
 
-			onAnswerReceived ifNotNil: [ :blk | blk value: messages last ]
-		] on: Error do: [ :ex |
-			ChatPharoLogger logBackend: 'Error during multivers execution'
-				details: (Dictionary new
-					at: 'chatId' put: self identityHash;
-					at: 'error' put: ex messageText;
-					yourself).
-			onErrorReceived ifNotNil: [ :blk | blk value: ex messageText ]
-		]
-	] fork
+			                 onAnswerReceived ifNotNil: [ :blk | blk value: messages last ] ]
+			                 on: Error
+			                 do: [ :ex |
+					                 ChatPharoLogger logBackend: 'Error during multivers execution' details: (Dictionary new
+							                  at: 'chatId' put: self identityHash;
+							                  at: 'error' put: ex messageText;
+							                  yourself).
+					                 onErrorReceived ifNotNil: [ :blk | blk value: ex messageText ] ] ] fork
 ]
 
 { #category : 'memory' }
