@@ -38,6 +38,12 @@ ChatPharoToolTestClientStub >> post [
 ]
 
 { #category : 'adding' }
+ChatPharoToolTestClientStub >> resetEntity [
+
+	^ self
+]
+
+{ #category : 'adding' }
 ChatPharoToolTestClientStub >> response [
 
     ^ ChatPharoToolTestResponseStub new
