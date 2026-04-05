@@ -55,6 +55,35 @@ This lets the model request specialized docs on demand.
 2. Implement `name`, `description`, `keywords`, and `contextString`.
 3. Refresh the skills list in settings (or reset the registry).
 
+## Adding a skill from a file (user)
+
+Users can provide extra skills as plain files on disk without writing any
+Pharo code. In **Settings > Skills**, click **Add skill file…** and pick a
+file. ChatPharo will load it on the next refresh and show it in the skills
+list like any built-in skill.
+
+The file may start with an optional header block of `key: value` lines
+terminated by a line containing only `---`, followed by the skill body:
+
+```text
+name: MyProjectConventions
+description: Coding conventions for my project
+keywords: conventions, style, myproject
+---
+## My Project Coding Conventions
+
+- Always use descriptive selectors…
+- Prefer composition over inheritance…
+```
+
+Recognised header keys are `name`, `description`, and `keywords` (comma
+separated). If no header is present the entire file is used as the skill
+body and the file name becomes the skill name.
+
+Registered file paths are persisted in `ChatPharoSettings>>skillFilePaths`
+and reloaded at startup.
+
+
 ## Related docs
 
 - Features: **features.md**
