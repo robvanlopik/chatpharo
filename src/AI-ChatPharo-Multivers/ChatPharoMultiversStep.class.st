@@ -31,33 +31,21 @@ Class {
 { #category : 'accessing' }
 ChatPharoMultiversStep >> agentClass [
 
-		"Return the agent class. Handle the case where agentClass was stored as
-	 a string or symbol during STON serialization by resolving it to the actual class."
-
 	agentClass ifNil: [ ^ agentClass := ChatPharoNullAgent ].
 	agentClass isClass ifTrue: [ ^ agentClass ].
-
-	"Resolve string/symbol to class (handles STON deserialization)"
-	^ agentClass := Smalltalk
-		at: agentClass asSymbol
-		ifAbsent: [ ChatPharoNullAgent ]
+	^ agentClass := Smalltalk at: agentClass asString asSymbol ifAbsent: [ ChatPharoNullAgent ]
 ]
 
 { #category : 'accessing' }
 ChatPharoMultiversStep >> agentClass: aClassOrName [
-	"Set the agent class. Accepts either a class object or a class name (string/symbol)."
 
 	aClassOrName ifNil: [
-		agentClass := ChatPharoNullAgent.
-		^ self ].
+			agentClass := ChatPharoNullAgent.
+			^ self ].
 
 	aClassOrName isClass
 		ifTrue: [ agentClass := aClassOrName ]
-		ifFalse: [
-			"Resolve string/symbol to class"
-			agentClass := Smalltalk
-				at: aClassOrName asSymbol
-				ifAbsent: [ ChatPharoNullAgent ] ]
+		ifFalse: [  agentClass := Smalltalk at: aClassOrName asString asSymbol ifAbsent: [ ChatPharoNullAgent ] ]
 ]
 
 { #category : 'accessing' }
@@ -82,20 +70,18 @@ ChatPharoMultiversStep >> agentSettings: aDictionary [
 
 { #category : 'accessing' }
 ChatPharoMultiversStep >> buildAgent [
-	"Create and configure an agent instance for this step"
 
 	| agent |
 	agent := self agentClass new.
 
 	self model ifNotEmpty: [ agent model: self model ].
 
-	self customSystemPrompt ifNotEmpty: [
-		agent systemPrompt: self customSystemPrompt ].
-
-	"Apply additional settings"
+	self customSystemPrompt ifNotEmpty: [ agent systemPrompt: self customSystemPrompt ].
 	self agentSettings keysAndValuesDo: [ :key :value |
-		(agent respondsTo: (key , ':') asSymbol) ifTrue: [
-			agent perform: (key , ':') asSymbol with: value ] ].
+| setter |
+		setter := (key asString , ':') asSymbol.
+		(agent respondsTo: setter) ifTrue: [
+			agent perform: setter with: value ] ].
 
 	^ agent
 ]
