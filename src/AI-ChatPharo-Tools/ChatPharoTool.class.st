@@ -321,6 +321,7 @@ ChatPharoTool >> getResponseForHistory: history [
 			            systemPrompt ifNotNil: [ stream nextPut: (Dictionary with: 'role' -> 'system' with: 'content' -> systemPrompt) ].
 			            history putOpenAIChatMessagesOn: stream ].
 	data := self buildPayloadFor: messages.
+	data removeKey: 'chatpharo_ethics' ifAbsent: [].
 	httpClient := self cachedClient.
 	startedAt := DateAndTime now.
 	response := [
@@ -333,12 +334,8 @@ ChatPharoTool >> getResponseForHistory: history [
 			            elapsedSeconds := (DateAndTime now - startedAt) asSeconds.
 			            director := ChatPharoSettings default ethicsDirector.
 			            director ifNotNil: [ director lastRequestDurationSeconds: elapsedSeconds ] ].
-	response := httpClient
-		            resetEntity;
-		            entity: (ZnEntity json: (self jsonStringFor: (self normalizeForJson: data)));
-		            timeout: self requestTimeoutSeconds;
-		            post;
-		            response.
+	response isSuccess ifFalse: [
+		Error signal: 'Could not get chat completion: ' , response status asString , ' - ' , (response contents ifNil: [ 'no details' ]) ].
 	response isSuccess ifFalse: [ Error signal: 'Could not get chat completion' ].
 	message := ((STONJSON fromString: response contents) at: 'choices') first at: 'message'.
 	toolCalls := self toolCallsFromMessage: message.
