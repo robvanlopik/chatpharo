@@ -30,7 +30,7 @@ ChatPharoOpenAIAgent class >> isReachable [
 { #category : 'api' }
 ChatPharoOpenAIAgent class >> modelNames [
 
-	^ #( 'gpt-4o' 'gpt-4o-mini' 'gpt-4-turbo' 'gpt-3.5-turbo' 'o1' 'o1-mini' 'o3-mini' 'codex-mini-latest' )
+	^ #( 'Enter your API-Key' )
 ]
 
 { #category : 'api' }
@@ -107,8 +107,7 @@ ChatPharoOpenAIAgent >> initialize [
 	super initialize.
 	host := 'api.openai.com'.
 	apiKey := ''.
-	model := ''.
-	temperature := 0.7
+	model := ''
 ]
 
 { #category : 'accessing' }
@@ -120,7 +119,8 @@ ChatPharoOpenAIAgent >> isConfigured [
 { #category : 'accessing' }
 ChatPharoOpenAIAgent >> modelInformation [
 
-	^ self shouldBeImplemented
+	^ 'OpenAI/Codex agent. Requires an API key from
+https://platform.openai.com/api-keys'
 ]
 
 { #category : 'accessing' }
