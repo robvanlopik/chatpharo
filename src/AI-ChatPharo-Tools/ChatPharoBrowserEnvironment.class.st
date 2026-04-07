@@ -354,36 +354,42 @@ ChatPharoBrowserEnvironment >> applyFunctionGetClassesInPackages: arguments [
 
 { #category : 'comment-managments' }
 ChatPharoBrowserEnvironment >> applyFunctionGetMethodComment: arguments [
-	"Get the comment of a method (the first string literal in the method body)."
 
 	| className selector side theClass targetClass |
-	className := arguments at: 'class_name'.
-	selector := arguments at: 'selector'.
+	className := arguments at: 'class_name' ifAbsent: [ nil ].
+	selector := arguments at: 'selector' ifAbsent: [ nil ].
 	side := arguments at: 'side' ifAbsent: [ 'instance' ].
 
+
+	(className isNil or: [ className isEmpty ]) ifTrue: [
+		^ Dictionary with: 'error' -> 'Missing required parameter: class_name' ].
+	(selector isNil or: [ selector isEmpty ]) ifTrue: [
+		^ Dictionary with: 'error' -> 'Missing required parameter: selector' ].
+	
+	
 	theClass := self classNamed: className.
-	theClass ifNil: [
-		^ Dictionary with: 'error' -> ('Class not found: ' , className) ].
+	theClass ifNil: [ ^ Dictionary with: 'error' -> ('Class not found: ' , className) ].
 
 	targetClass := side = 'class'
-		ifTrue: [ theClass class ]
-		ifFalse: [ theClass ].
+		               ifTrue: [ theClass class ]
+		               ifFalse: [ theClass ].
 
-	(targetClass includesSelector: selector asSymbol) ifFalse: [
-		^ Dictionary with: 'error' -> ('Method not found: ' , selector) ].
+	(targetClass includesSelector: selector asSymbol) ifFalse: [ ^ Dictionary with: 'error' -> ('Method not found: ' , selector) ].
 
 	[
 		| method comment |
 		method := targetClass >> selector asSymbol.
-		comment := [ method comment ] on: Error do: [ :e | nil ].
+		comment := [ method comment ]
+			           on: Error
+			           do: [ :e | nil ].
 
 		^ Dictionary
-			with: 'class' -> className
-			with: 'side' -> side
-			with: 'selector' -> selector
-			with: 'comment' -> (comment ifNil: [ '' ])
-	] on: Error do: [ :error |
-		^ Dictionary with: 'error' -> ('Failed to get method comment: ' , error messageText) ]
+			  with: 'class' -> className
+			  with: 'side' -> side
+			  with: 'selector' -> selector
+			  with: 'comment' -> (comment ifNil: [ '' ]) ]
+		on: Error
+		do: [ :error | ^ Dictionary with: 'error' -> ('Failed to get method comment: ' , error messageText) ]
 ]
 
 { #category : 'comment-managments' }
@@ -445,38 +451,38 @@ ChatPharoBrowserEnvironment >> applyFunctionMoveClassToPackage: arguments [
 
 { #category : 'method-managments' }
 ChatPharoBrowserEnvironment >> applyFunctionMoveMethodToProtocol: arguments [
-	"Move a method to a different protocol."
 
 	| className selector protocol side theClass targetClass |
-	className := arguments at: 'class_name'.
-	selector := arguments at: 'selector'.
-	protocol := arguments at: 'protocol'.
+	className := arguments at: 'class_name' ifAbsent: [ nil ] .
+	selector := arguments at: 'selector' ifAbsent: [ nil ].
+	protocol := arguments at: 'protocol' ifAbsent: [ nil ].
 	side := arguments at: 'side' ifAbsent: [ 'instance' ].
 
+(className isNil or: [ className isEmpty ]) ifTrue: [
+		^ Dictionary with: 'error' -> 'Missing required parameter: class_name' ].
+	(selector isNil or: [ selector isEmpty ]) ifTrue: [
+		^ Dictionary with: 'error' -> 'Missing required parameter: selector' ].
+	(protocol isNil or: [ protocol isEmpty ]) ifTrue: [
+		^ Dictionary with: 'error' -> 'Missing required parameter: protocol' ].
+	
 	theClass := self classNamed: className.
-	theClass ifNil: [
-		^ Dictionary with: 'error' -> ('Class not found: ' , className) ].
-
-	"Determine which side (instance or class)"
+	theClass ifNil: [ ^ Dictionary with: 'error' -> ('Class not found: ' , className) ]. 
 	targetClass := side = 'class'
-		ifTrue: [ theClass class ]
-		ifFalse: [ theClass ].
-
-	"Check if method exists"
-	(targetClass includesSelector: selector asSymbol) ifFalse: [
-		^ Dictionary with: 'error' -> ('Method not found: ' , selector) ].
+		               ifTrue: [ theClass class ]
+		               ifFalse: [ theClass ].
+	(targetClass includesSelector: selector asSymbol) ifFalse: [ ^ Dictionary with: 'error' -> ('Method not found: ' , selector) ].
 
 	[
 		targetClass organization classify: selector asSymbol under: protocol.
 
 		^ Dictionary
-			with: 'success' -> true
-			with: 'class' -> className
-			with: 'side' -> side
-			with: 'selector' -> selector
-			with: 'new_protocol' -> protocol
-	] on: Error do: [ :error |
-		^ Dictionary with: 'error' -> ('Failed to move method: ' , error messageText) ]
+			  with: 'success' -> true
+			  with: 'class' -> className
+			  with: 'side' -> side
+			  with: 'selector' -> selector
+			  with: 'new_protocol' -> protocol ]
+		on: Error
+		do: [ :error | ^ Dictionary with: 'error' -> ('Failed to move method: ' , error messageText) ]
 ]
 
 { #category : 'class-managments' }
@@ -509,17 +515,20 @@ ChatPharoBrowserEnvironment >> applyFunctionRemoveClass: arguments [
 
 { #category : 'class-managments' }
 ChatPharoBrowserEnvironment >> applyFunctionRemoveInstanceVariable: arguments [
-	"Remove an instance variable from an existing class."
 
 	| className variableName theClass |
+		className := arguments at: 'class_name' ifAbsent: [ nil ].
+	variableName := arguments at: 'variable_name' ifAbsent: [ nil ].
+
+	(className isNil or: [ className isEmpty ]) ifTrue: [
+		^ Dictionary with: 'error' -> 'Missing required parameter: class_name' ].
+	(variableName isNil or: [ variableName isEmpty ]) ifTrue: [
+		^ Dictionary with: 'error' -> 'Missing required parameter: variable_name' ].
 	className := arguments at: 'class_name'.
 	variableName := arguments at: 'variable_name'.
 
 	theClass := self classNamed: className.
-	theClass ifNil: [
-		^ Dictionary with: 'error' -> ('Class not found: ' , className) ].
-
-	"Check if variable exists"
+	theClass ifNil: [ ^ Dictionary with: 'error' -> ('Class not found: ' , className) ]. "Check if variable exists"
 	(theClass instVarNames includes: variableName asSymbol) ifFalse: [
 		^ Dictionary with: 'error' -> ('Instance variable not found: ' , variableName) ].
 
@@ -527,305 +536,275 @@ ChatPharoBrowserEnvironment >> applyFunctionRemoveInstanceVariable: arguments [
 		theClass removeInstVarNamed: variableName.
 
 		^ Dictionary
-			with: 'success' -> true
-			with: 'class' -> className
-			with: 'removed_variable' -> variableName
-			with: 'remaining_instance_variables' -> theClass instVarNames asArray
-	] on: Error do: [ :error |
-		^ Dictionary with: 'error' -> ('Failed to remove instance variable: ' , error messageText) ]
-
+			  with: 'success' -> true
+			  with: 'class' -> className
+			  with: 'removed_variable' -> variableName
+			  with: 'remaining_instance_variables' -> theClass instVarNames asArray ]
+		on: Error
+		do: [ :error | ^ Dictionary with: 'error' -> ('Failed to remove instance variable: ' , error messageText) ]
 ]
 
 { #category : 'method-managments' }
 ChatPharoBrowserEnvironment >> applyFunctionRemoveMethod: arguments [
-	"Remove a method from a class."
 
 	| className selector side theClass targetClass |
-	className := arguments at: 'class_name'.
-	selector := arguments at: 'selector'.
+	className := arguments at: 'class_name' ifAbsent: [ nil ].
+	selector := arguments at: 'selector' ifAbsent: [ nil ].
 	side := arguments at: 'side' ifAbsent: [ 'instance' ].
 
+	(className isNil or: [ className isEmpty ]) ifTrue: [
+		^ Dictionary with: 'error' -> 'Missing required parameter: class_name' ].
+	(selector isNil or: [ selector isEmpty ]) ifTrue: [
+		^ Dictionary with: 'error' -> 'Missing required parameter: selector' ].
+	
 	theClass := self classNamed: className.
-	theClass ifNil: [
-		^ Dictionary with: 'error' -> ('Class not found: ' , className) ].
-
-	"Determine which side (instance or class)"
+	theClass ifNil: [ ^ Dictionary with: 'error' -> ('Class not found: ' , className) ]. 
 	targetClass := side = 'class'
-		ifTrue: [ theClass class ]
-		ifFalse: [ theClass ].
-
-	"Check if method exists"
-	(targetClass includesSelector: selector asSymbol) ifFalse: [
-		^ Dictionary with: 'error' -> ('Method not found: ' , selector) ].
+		               ifTrue: [ theClass class ]
+		               ifFalse: [ theClass ]. 
+	(targetClass includesSelector: selector asSymbol) ifFalse: [ ^ Dictionary with: 'error' -> ('Method not found: ' , selector) ].
 
 	[
 		targetClass removeSelector: selector asSymbol.
 
 		^ Dictionary
-			with: 'success' -> true
-			with: 'class' -> className
-			with: 'side' -> side
-			with: 'removed_selector' -> selector
-	] on: Error do: [ :error |
-		^ Dictionary with: 'error' -> ('Failed to remove method: ' , error messageText) ]
+			  with: 'success' -> true
+			  with: 'class' -> className
+			  with: 'side' -> side
+			  with: 'removed_selector' -> selector ]
+		on: Error
+		do: [ :error | ^ Dictionary with: 'error' -> ('Failed to remove method: ' , error messageText) ]
 ]
 
 { #category : 'class-managments' }
 ChatPharoBrowserEnvironment >> applyFunctionRenameClass: arguments [
-	"Rename a single class using Pharo's modern refactoring engine."
 
 	| oldName newName theClass refactoring |
-	oldName := arguments at: 'old_name'.
-	newName := arguments at: 'new_name'.
+	oldName := arguments at: 'old_name' ifAbsent: [ nil ].
+	newName := arguments at: 'new_name' ifAbsent: [ nil ].
 
-	"Validate the old class exists"
+	(oldName isNil or: [ oldName isEmpty ]) ifTrue: [
+		^ Dictionary with: 'error' -> 'Missing required parameter: old_name' ].
+	(newName isNil or: [ newName isEmpty ]) ifTrue: [
+		^ Dictionary with: 'error' -> 'Missing required parameter: new_name' ].
 	theClass := self classNamed: oldName.
-	theClass ifNil: [
-		^ Dictionary with: 'error' -> ('Class not found: ' , oldName) ].
-
-	"Validate new name is a valid class name"
+	theClass ifNil: [ ^ Dictionary with: 'error' -> ('Class not found: ' , oldName) ]. 
 	(newName isEmpty or: [ newName first isUppercase not ]) ifTrue: [
-		^ Dictionary with: 'error' -> 'New class name must start with an uppercase letter' ].
-
-	"Check if the new name is already taken"
+		^ Dictionary with: 'error' -> 'New class name must start with an uppercase letter' ]. 
 	(Smalltalk globals includesKey: newName asSymbol) ifTrue: [
-		^ Dictionary with: 'error' -> ('A class with name ' , newName , ' already exists') ].
-
-	"Perform the refactoring"
+		^ Dictionary with: 'error' -> ('A class with name ' , newName , ' already exists') ]. 
 	[
-		refactoring := ReRenameClassRefactoring
-			rename: theClass
-			to: newName asSymbol.
+		refactoring := ReRenameClassRefactoring rename: theClass to: newName asSymbol.
 		refactoring execute.
 
 		^ Dictionary
-			with: 'success' -> true
-			with: 'old_name' -> oldName
-			with: 'new_name' -> newName
-			with: 'message' -> ('Successfully renamed ' , oldName , ' to ' , newName)
-	] on: Error do: [ :error |
-		^ Dictionary with: 'error' -> ('Refactoring failed: ' , error messageText) ]
-
+			  with: 'success' -> true
+			  with: 'old_name' -> oldName
+			  with: 'new_name' -> newName
+			  with: 'message' -> ('Successfully renamed ' , oldName , ' to ' , newName) ]
+		on: Error
+		do: [ :error | ^ Dictionary with: 'error' -> ('Refactoring failed: ' , error messageText) ]
 ]
 
 { #category : 'class-managments' }
 ChatPharoBrowserEnvironment >> applyFunctionRenameClassesInPackage: arguments [
-	"Rename multiple classes in a package based on pattern matching."
 
 	| packageName searchPattern replacePattern classes renamedClasses errors dryRun |
-	packageName := arguments at: 'package'.
-	searchPattern := arguments at: 'search_pattern'.
-	replacePattern := arguments at: 'replace_pattern'.
-	dryRun := arguments at: 'dry_run' ifAbsent: [ false ].
-
-	"Validate package exists"
+	packageName := arguments at: 'package' ifAbsent: [ nil ].
+	searchPattern := arguments at: 'search_pattern' ifAbsent: [ nil ].
+	replacePattern := arguments at: 'replace_pattern' ifAbsent: [ nil ].
+	dryRun := arguments at: 'dry_run' ifAbsent: [ false ]. 
+		(packageName isNil or: [ packageName isEmpty ]) ifTrue: [
+		^ Dictionary with: 'error' -> 'Missing required parameter: package' ].
+	(searchPattern isNil or: [ searchPattern isEmpty ]) ifTrue: [
+		^ Dictionary with: 'error' -> 'Missing required parameter: search_pattern' ].
+	replacePattern ifNil: [
+		^ Dictionary with: 'error' -> 'Missing required parameter: replace_pattern' ].
+	
+	
 	classes := self classesInPackageNamed: packageName.
-	classes ifNil: [
-		^ Dictionary with: 'error' -> ('Package not found: ' , packageName) ].
+	classes ifNil: [ ^ Dictionary with: 'error' -> ('Package not found: ' , packageName) ].
 
 	renamedClasses := OrderedCollection new.
-	errors := OrderedCollection new.
-
-	"Find classes matching the pattern and compute new names"
+	errors := OrderedCollection new. 
 	classes do: [ :theClass |
-		| oldName newName |
-		oldName := theClass name asString.
+			| oldName newName |
+			oldName := theClass name asString.
 
-		(oldName includesSubstring: searchPattern) ifTrue: [
-			newName := oldName copyReplaceAll: searchPattern with: replacePattern.
-
-			"Validate new name"
-			(newName isEmpty or: [ newName first isUppercase not ])
-				ifTrue: [
-					errors add: (Dictionary
-						with: 'old_name' -> oldName
-						with: 'error' -> 'New name would not start with uppercase') ]
-				ifFalse: [
-					(Smalltalk globals includesKey: newName asSymbol)
-						ifTrue: [
-							errors add: (Dictionary
-								with: 'old_name' -> oldName
-								with: 'new_name' -> newName
-								with: 'error' -> 'Target name already exists') ]
+			(oldName includesSubstring: searchPattern) ifTrue: [
+					newName := oldName copyReplaceAll: searchPattern with: replacePattern. 
+					(newName isEmpty or: [ newName first isUppercase not ])
+						ifTrue: [ errors add: (Dictionary with: 'old_name' -> oldName with: 'error' -> 'New name would not start with uppercase') ]
 						ifFalse: [
-							dryRun
-								ifTrue: [
-									renamedClasses add: (Dictionary
-										with: 'old_name' -> oldName
-										with: 'new_name' -> newName
-										with: 'status' -> 'would_rename') ]
-								ifFalse: [
-									[
-										| refactoring |
-										refactoring := ReRenameClassRefactoring
-											rename: theClass
-											to: newName asSymbol.
-										refactoring execute.
+								(Smalltalk globals includesKey: newName asSymbol)
+									ifTrue: [
+									errors add:
+										(Dictionary with: 'old_name' -> oldName with: 'new_name' -> newName with: 'error' -> 'Target name already exists') ]
+									ifFalse: [
+											dryRun
+												ifTrue: [
+												renamedClasses add:
+													(Dictionary with: 'old_name' -> oldName with: 'new_name' -> newName with: 'status' -> 'would_rename') ]
+												ifFalse: [
+														[
+															| refactoring |
+															refactoring := ReRenameClassRefactoring rename: theClass to: newName asSymbol.
+															refactoring execute.
 
-										renamedClasses add: (Dictionary
-											with: 'old_name' -> oldName
-											with: 'new_name' -> newName
-											with: 'status' -> 'renamed')
-									] on: Error do: [ :error |
-										errors add: (Dictionary
-											with: 'old_name' -> oldName
-											with: 'new_name' -> newName
-											with: 'error' -> error messageText) ] ] ] ] ] ].
+															renamedClasses add:
+																(Dictionary with: 'old_name' -> oldName with: 'new_name' -> newName with: 'status' -> 'renamed') ]
+															on: Error
+															do: [ :error |
+															errors add: (Dictionary with: 'old_name' -> oldName with: 'new_name' -> newName with: 'error' -> error messageText) ] ] ] ] ] ].
 
-^ (Dictionary new)
-	at: 'package' put: packageName;
-	at: 'search_pattern' put: searchPattern;
-	at: 'replace_pattern' put: replacePattern;
-	at: 'dry_run' put: dryRun;
-	at: 'renamed_classes' put: renamedClasses asArray;
-	at: 'errors' put: errors asArray;
-	at: 'total_matched' put: (renamedClasses size + errors size);
-	at: 'successful' put: renamedClasses size;
-	yourself
-
-
+	^ Dictionary new
+		  at: 'package' put: packageName;
+		  at: 'search_pattern' put: searchPattern;
+		  at: 'replace_pattern' put: replacePattern;
+		  at: 'dry_run' put: dryRun;
+		  at: 'renamed_classes' put: renamedClasses asArray;
+		  at: 'errors' put: errors asArray;
+		  at: 'total_matched' put: renamedClasses size + errors size;
+		  at: 'successful' put: renamedClasses size;
+		  yourself
 ]
 
 { #category : 'method-managments' }
 ChatPharoBrowserEnvironment >> applyFunctionRenameMethod: arguments [
-	"Rename a method using refactoring."
 
 	| className oldSelector newSelector side theClass targetClass |
-	className := arguments at: 'class_name'.
-	oldSelector := arguments at: 'old_selector'.
-	newSelector := arguments at: 'new_selector'.
+	className := arguments at: 'class_name' ifAbsent: [ nil ].
+	oldSelector := arguments at: 'old_selector' ifAbsent: [ nil ].
+	newSelector := arguments at: 'new_selector' ifAbsent: [ nil ].
 	side := arguments at: 'side' ifAbsent: [ 'instance' ].
 
+	(className isNil or: [ className isEmpty ]) ifTrue: [
+		^ Dictionary with: 'error' -> 'Missing required parameter: class_name' ].
+	(oldSelector isNil or: [ oldSelector isEmpty ]) ifTrue: [
+		^ Dictionary with: 'error' -> 'Missing required parameter: old_selector' ].
+	(newSelector isNil or: [ newSelector isEmpty ]) ifTrue: [
+		^ Dictionary with: 'error' -> 'Missing required parameter: new_selector' ].
+	
 	theClass := self classNamed: className.
-	theClass ifNil: [
-		^ Dictionary with: 'error' -> ('Class not found: ' , className) ].
-
-	"Determine which side (instance or class)"
+	theClass ifNil: [ ^ Dictionary with: 'error' -> ('Class not found: ' , className) ].
 	targetClass := side = 'class'
-		ifTrue: [ theClass class ]
-		ifFalse: [ theClass ].
-
-	"Check if old method exists"
+		               ifTrue: [ theClass class ]
+		               ifFalse: [ theClass ]. 
 	(targetClass includesSelector: oldSelector asSymbol) ifFalse: [
 		^ Dictionary with: 'error' -> ('Method not found: ' , oldSelector) ].
-
-	"Check if new selector is already used"
 	(targetClass includesSelector: newSelector asSymbol) ifTrue: [
 		^ Dictionary with: 'error' -> ('Selector already exists: ' , newSelector) ].
 
 	[
 		| refactoring |
 		refactoring := ReRenameMethodRefactoring
-			renameMethod: oldSelector asSymbol
-			in: targetClass
-			to: newSelector asSymbol
-			permutation: (1 to: oldSelector asSymbol numArgs).
+			               renameMethod: oldSelector asSymbol
+			               in: targetClass
+			               to: newSelector asSymbol
+			               permutation: (1 to: oldSelector asSymbol numArgs).
 		refactoring execute.
 
 		^ Dictionary
-			with: 'success' -> true
-			with: 'class' -> className
-			with: 'side' -> side
-			with: 'old_selector' -> oldSelector
-			with: 'new_selector' -> newSelector
-	] on: Error do: [ :error |
-		^ Dictionary with: 'error' -> ('Failed to rename method: ' , error messageText) ]
+			  with: 'success' -> true
+			  with: 'class' -> className
+			  with: 'side' -> side
+			  with: 'old_selector' -> oldSelector
+			  with: 'new_selector' -> newSelector ]
+		on: Error
+		do: [ :error | ^ Dictionary with: 'error' -> ('Failed to rename method: ' , error messageText) ]
 ]
 
 { #category : 'class-managments' }
 ChatPharoBrowserEnvironment >> applyFunctionSetClassComment: arguments [
-	"Set or update the comment of a class."
 
 	| className comment theClass |
+		className := arguments at: 'class_name' ifAbsent: [ nil ].
+	comment := arguments at: 'comment' ifAbsent: [ nil ].
+
+	(className isNil or: [ className isEmpty ]) ifTrue: [
+		^ Dictionary with: 'error' -> 'Missing required parameter: class_name' ].
+	comment ifNil: [
+		^ Dictionary with: 'error' -> 'Missing required parameter: comment' ].
 	className := arguments at: 'class_name'.
 	comment := arguments at: 'comment'.
 
 	theClass := self classNamed: className.
-	theClass ifNil: [
-		^ Dictionary with: 'error' -> ('Class not found: ' , className) ].
+	theClass ifNil: [ ^ Dictionary with: 'error' -> ('Class not found: ' , className) ].
 
 	[
 		theClass comment: comment.
 
-		^ Dictionary
-			with: 'success' -> true
-			with: 'class' -> className
-			with: 'comment' -> comment
-	] on: Error do: [ :error |
-		^ Dictionary with: 'error' -> ('Failed to set class comment: ' , error messageText) ]
+		^ Dictionary with: 'success' -> true with: 'class' -> className with: 'comment' -> comment ]
+		on: Error
+		do: [ :error | ^ Dictionary with: 'error' -> ('Failed to set class comment: ' , error messageText) ]
 ]
 
 { #category : 'comment-managments' }
 ChatPharoBrowserEnvironment >> applyFunctionSetMethodComment: arguments [
-	"Set or update the comment of a method.
-	 In Pharo, a method comment is the first string literal in the method body.
-	 This replaces (or inserts) that comment string and recompiles the method."
 
 	| className selector side comment theClass targetClass method sourceCode newSource protocol commentLiteral |
-	className := arguments at: 'class_name'.
-	selector := arguments at: 'selector'.
-	comment := arguments at: 'comment'.
+	className := arguments at: 'class_name' ifAbsent: [ nil ].
+	selector := arguments at: 'selector' ifAbsent: [ nil ].
+	comment := arguments at: 'comment' ifAbsent: [ nil ].
 	side := arguments at: 'side' ifAbsent: [ 'instance' ].
 
+	(className isNil or: [ className isEmpty ]) ifTrue: [
+		^ Dictionary with: 'error' -> 'Missing required parameter: class_name' ].
+	(selector isNil or: [ selector isEmpty ]) ifTrue: [
+		^ Dictionary with: 'error' -> 'Missing required parameter: selector' ].
+	comment ifNil: [
+		^ Dictionary with: 'error' -> 'Missing required parameter: comment' ].
+	
 	theClass := self classNamed: className.
-	theClass ifNil: [
-		^ Dictionary with: 'error' -> ('Class not found: ' , className) ].
+	theClass ifNil: [ ^ Dictionary with: 'error' -> ('Class not found: ' , className) ].
 
 	targetClass := side = 'class'
-		ifTrue: [ theClass class ]
-		ifFalse: [ theClass ].
+		               ifTrue: [ theClass class ]
+		               ifFalse: [ theClass ].
 
-	(targetClass includesSelector: selector asSymbol) ifFalse: [
-		^ Dictionary with: 'error' -> ('Method not found: ' , selector) ].
+	(targetClass includesSelector: selector asSymbol) ifFalse: [ ^ Dictionary with: 'error' -> ('Method not found: ' , selector) ].
 
 	[
 		| existingComment |
 		method := targetClass >> selector asSymbol.
 		sourceCode := method sourceCode.
 		protocol := method protocol.
-		existingComment := [ method comment ] on: Error do: [ :e | nil ].
-
-		"Build the new comment string literal"
+		existingComment := [ method comment ]
+			                   on: Error
+			                   do: [ :e | nil ]. "Build the new comment string literal"
 		commentLiteral := '"' , (comment copyReplaceAll: '"' with: '""') , '"'.
 
 		existingComment isNil
-			ifTrue: [
-				"No existing comment - insert after method signature line"
-				| signatureEnd bodyStart |
-				"Find the end of the first line (method signature)"
-				signatureEnd := (sourceCode indexOf: Character cr ifAbsent: [
-					sourceCode indexOf: Character lf ifAbsent: [ sourceCode size ] ]).
-				bodyStart := sourceCode copyFrom: signatureEnd + 1 to: sourceCode size.
-				newSource := (sourceCode copyFrom: 1 to: signatureEnd) ,
-					String cr , String tab , commentLiteral ,
-					bodyStart ]
-			ifFalse: [
-				"Replace existing comment"
-				| existingLiteral |
-				existingLiteral := '"' , (existingComment copyReplaceAll: '"' with: '""') , '"'.
-				(sourceCode includesSubstring: existingLiteral)
-					ifTrue: [ newSource := sourceCode copyReplaceAll: existingLiteral with: commentLiteral ]
-					ifFalse: [
-						"Fallback: insert after signature if we can't find the old comment"
-						| signatureEnd bodyStart |
-						signatureEnd := (sourceCode indexOf: Character cr ifAbsent: [
-							sourceCode indexOf: Character lf ifAbsent: [ sourceCode size ] ]).
-						bodyStart := sourceCode copyFrom: signatureEnd + 1 to: sourceCode size.
-						newSource := (sourceCode copyFrom: 1 to: signatureEnd) ,
-							String cr , String tab , commentLiteral ,
-							bodyStart ] ].
+			ifTrue: [ "No existing comment - insert after method signature line"
+					| signatureEnd bodyStart |
+					"Find the end of the first line (method signature)"
+					signatureEnd := sourceCode indexOf: Character cr ifAbsent: [ sourceCode indexOf: Character lf ifAbsent: [ sourceCode size ] ].
+					bodyStart := sourceCode copyFrom: signatureEnd + 1 to: sourceCode size.
+					newSource := (sourceCode copyFrom: 1 to: signatureEnd) , String cr , String tab , commentLiteral , bodyStart ]
+			ifFalse: [ "Replace existing comment"
+					| existingLiteral |
+					existingLiteral := '"' , (existingComment copyReplaceAll: '"' with: '""') , '"'.
+					(sourceCode includesSubstring: existingLiteral)
+						ifTrue: [ newSource := sourceCode copyReplaceAll: existingLiteral with: commentLiteral ]
+						ifFalse: [ "Fallback: insert after signature if we can't find the old comment"
+								| signatureEnd bodyStart |
+								signatureEnd := sourceCode
+									                indexOf: Character cr
+									                ifAbsent: [ sourceCode indexOf: Character lf ifAbsent: [ sourceCode size ] ].
+								bodyStart := sourceCode copyFrom: signatureEnd + 1 to: sourceCode size.
+								newSource := (sourceCode copyFrom: 1 to: signatureEnd) , String cr , String tab , commentLiteral , bodyStart ] ].
 
 		newSource := self normalizeLineEndingsToCr: newSource.
 		targetClass compile: newSource classified: protocol.
 
 		^ Dictionary
-			with: 'success' -> true
-			with: 'class' -> className
-			with: 'side' -> side
-			with: 'selector' -> selector
-			with: 'comment' -> comment
-	] on: Error do: [ :error |
-		^ Dictionary with: 'error' -> ('Failed to set method comment: ' , error messageText) ]
+			  with: 'success' -> true
+			  with: 'class' -> className
+			  with: 'side' -> side
+			  with: 'selector' -> selector
+			  with: 'comment' -> comment ]
+		on: Error
+		do: [ :error | ^ Dictionary with: 'error' -> ('Failed to set method comment: ' , error messageText) ]
 ]
 
 { #category : 'comment-managments' }

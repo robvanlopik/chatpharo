@@ -148,15 +148,14 @@ ChatPharoSandbox class >> withDefaults [
 
 { #category : 'adding' }
 ChatPharoSandbox >> addBlockedClass: aClassName [
-	"Add a class name (symbol) to the blocked list"
-
+	aClassName ifNil: [ ^ self ].
 	blockedClasses add: aClassName asSymbol
 ]
 
 { #category : 'adding' }
 ChatPharoSandbox >> addBlockedSelector: aSelector [
-	"Add a selector to the blocked list"
 
+aSelector ifNil: [ ^ self ].
 	blockedSelectors add: aSelector asSymbol
 ]
 
