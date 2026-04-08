@@ -648,7 +648,7 @@ ChatPharoSetupPresenter >> showWelcomeStep [
 	termsButton := self newButton
 		label: 'Privacy Policy & Terms';
 		icon: (self iconNamed: #glamorousBrowse);
-		action: [ WebBrowser openOn: 'https://pharo-llm.github.io' ];
+		action: [ WebBrowser openOn: 'https://pharo-llm.github.io/privacy.html' ];
 		yourself.
 
 	continueButton := self newButton

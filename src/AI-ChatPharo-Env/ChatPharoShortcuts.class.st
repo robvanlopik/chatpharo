@@ -44,6 +44,10 @@ ChatPharoShortcuts class >> installAsGlobalCategory [
 			action: [ self openChatPharo ]).
 
 	KMRepository default addCategory: category.
+	"Attach the category to the current world so shortcuts are active globally"
+	World ifNotNil: [ :w |
+		w kmDispatcher addCategory: category ].
+	
 
 	^ category
 ]
